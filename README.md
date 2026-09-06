@@ -267,7 +267,7 @@ Feel free to submit issues and enhancement requests!
 
 ## License
 
-This project is open source. Feel free to use it as a template for your own Discord bot.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for complete details.
 
 ## Support
 
