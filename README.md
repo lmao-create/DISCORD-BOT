@@ -30,6 +30,13 @@ A feature-rich Discord bot built with discord.py featuring music playback, moder
 - Customizable welcome messages
 - Member join notifications
 
+### 📝 Applications
+- Modal-based application form (name, email, reason, experience)
+- User submissions with automatic DM notifications
+- Admin review and approval/rejection system
+- Configurable results channel for posting decisions
+- Application history and status tracking
+
 ## Requirements
 
 - Python 3.8+
@@ -197,6 +204,21 @@ docker run -d -e TOKEN=your_token discord-bot
 - `/unban <user> [reason]` - Unban a user
 - `/purge <amount> [member]` - Delete messages
 
+### Application Commands
+**User Commands:**
+- `/apply` - Submit an application via modal form
+- `/myapplications` - View your submitted applications
+- `/viewapplication <id>` - View details of a specific application
+- `/deleteapplication <id>` - Delete one of your applications
+
+**Admin Commands:**
+- `/allapplications` - View all applications with summary and recent submissions
+- `/reviewapplication <id> <decision>` - Approve or reject an application
+- `/clearapplications` - Delete all applications (admin only)
+- `/setresultschannel <channel>` - Configure where decisions are posted
+- `/viewresultschannel` - View current results channel
+- `/clearresultschannel` - Remove results channel configuration
+
 ## Project Structure
 
 ```
@@ -208,7 +230,8 @@ discord-bot/
 │   ├── ECO.py          # Economy commands
 │   ├── Fun.py          # Fun commands
 │   ├── Logs.py         # Logging commands
-│   └── Welcome.py      # Welcome system
+│   ├── Welcome.py      # Welcome system
+│   └── Applications.py # Application management system
 ├── .env.example        # Example environment file
 ├── .gitignore          # Git ignore rules
 ├── requirements.txt    # Python dependencies
@@ -230,6 +253,8 @@ The bot stores data in JSON files:
 - `warns_data.json` - Warning records
 - `economy_data.json` - User currency/economy data
 - `welcome_config.json` - Welcome system configuration
+- `applications_data.json` - Submitted applications
+- `applications_config.json` - Application system configuration (results channel)
 
 ## Troubleshooting
 
