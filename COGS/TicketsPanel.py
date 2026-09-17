@@ -70,28 +70,39 @@ class TicketsPanel(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        # Save channel
-        self.set_panel_channel(interaction.guild_id, channel.id)
-
-        # Create the panel embed
-        panel_embed = discord.Embed(
-            title='🎫 Tickets',
-            description='To create a ticket click one of the buttons below',
-            color=discord.Color.blurple(),
-            timestamp=datetime.now()
-        )
-        panel_embed.add_field(
-            name='🆘 Support System',
-            value='Select a category and describe your issue. Our team will respond shortly.',
-            inline=False
-        )
-        panel_embed.set_footer(text='Your ticket will be reviewed by our support team')
-
-        # Create button view
-        view = TicketPanelView(self.bot)
-
-        # Send the panel message
         try:
+            # Check if bot has permissions
+            if not channel.permissions_for(interaction.guild.me).send_messages:
+                embed = discord.Embed(
+                    title='❌ Missing Permissions',
+                    description=f'I don\'t have permission to send messages in {channel.mention}',
+                    color=discord.Color.red(),
+                    timestamp=datetime.now()
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
+
+            # Save channel
+            self.set_panel_channel(interaction.guild_id, channel.id)
+
+            # Create the panel embed
+            panel_embed = discord.Embed(
+                title='🎫 Tickets',
+                description='To create a ticket click one of the buttons below',
+                color=discord.Color.blurple(),
+                timestamp=datetime.now()
+            )
+            panel_embed.add_field(
+                name='🆘 Support System',
+                value='Select a category and describe your issue. Our team will respond shortly.',
+                inline=False
+            )
+            panel_embed.set_footer(text='Your ticket will be reviewed by our support team')
+
+            # Create button view
+            view = TicketPanelView(self.bot)
+
+            # Send the panel message
             message = await channel.send(embed=panel_embed, view=view)
             self.set_panel_message_id(interaction.guild_id, message.id)
 
@@ -105,14 +116,24 @@ class TicketsPanel(commands.Cog):
             embed.add_field(name='Message ID', value=f'`{message.id}`', inline=True)
             embed.add_field(name='Status', value='🟢 Active', inline=True)
             await interaction.response.send_message(embed=embed, ephemeral=True)
-        except Exception as e:
+
+        except discord.Forbidden:
             embed = discord.Embed(
-                title='❌ Error',
-                description=f'Failed to create panel: {str(e)}',
+                title='❌ Permission Error',
+                description='I don\'t have permission to perform this action.',
                 color=discord.Color.red(),
                 timestamp=datetime.now()
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
+        except Exception as e:
+            embed = discord.Embed(
+                title='❌ Error',
+                description=f'Failed to create panel: {str(e)[:100]}',
+                color=discord.Color.red(),
+                timestamp=datetime.now()
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            print(f'Error creating ticket panel: {e}')
 
     @app_commands.command(name='viewticketpanel', description='View ticket panel settings (Admin only)')
     async def view_ticket_panel(self, interaction: discord.Interaction):
@@ -264,7 +285,12 @@ class TicketPanelView(discord.ui.View):
         tickets_cog = self.bot.get_cog('Tickets')
 
         if not tickets_cog:
-            await interaction.response.send_message('❌ Tickets system not found', ephemeral=True)
+            embed = discord.Embed(
+                title='❌ Error',
+                description='Tickets system not found. Please try again later.',
+                color=discord.Color.red()
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
         # Create modal for ticket creation
@@ -284,26 +310,62 @@ class TicketPanelView(discord.ui.View):
             )
 
             async def on_submit(self, modal_interaction: discord.Interaction):
-                if tickets_cog:
-                    ticket_id = tickets_cog.create_ticket(
-                        modal_interaction.user.id,
-                        self.title_input.value,
-                        self.description_input.value,
-                        category,
-                        modal_interaction.guild_id
-                    )
+                try:
+                    # Validate inputs
+                    if not self.title_input.value or not self.description_input.value:
+                        error_embed = discord.Embed(
+                            title='❌ Invalid Input',
+                            description='Please fill in all required fields.',
+                            color=discord.Color.red()
+                        )
+                        await modal_interaction.response.send_message(embed=error_embed, ephemeral=True)
+                        return
 
-                    embed = discord.Embed(
-                        title='✅ Ticket Created',
-                        description='Your support ticket has been created',
-                        color=discord.Color.green()
-                    )
-                    embed.add_field(name='Ticket ID', value=f'`{ticket_id}`', inline=False)
-                    embed.add_field(name='Category', value=category.capitalize(), inline=True)
-                    embed.add_field(name='Title', value=self.title_input.value, inline=False)
-                    embed.set_footer(text='Use /viewticket to check status')
+                    if tickets_cog:
+                        ticket_id = tickets_cog.create_ticket(
+                            modal_interaction.user.id,
+                            self.title_input.value,
+                            self.description_input.value,
+                            category,
+                            modal_interaction.guild_id
+                        )
 
-                    await modal_interaction.response.send_message(embed=embed, ephemeral=True)
+                        # Success embed
+                        embed = discord.Embed(
+                            title='✅ Ticket Created Successfully',
+                            description='Your support ticket has been created and our team will review it shortly.',
+                            color=discord.Color.green(),
+                            timestamp=datetime.now()
+                        )
+                        embed.add_field(name='Ticket ID', value=f'`{ticket_id}`', inline=False)
+                        embed.add_field(name='Category', value=category.capitalize(), inline=True)
+                        embed.add_field(name='Status', value='🟢 Open', inline=True)
+                        embed.add_field(name='Title', value=self.title_input.value, inline=False)
+                        embed.add_field(
+                            name='📌 Note',
+                            value='You can use `/viewticket` to check the status of your ticket.',
+                            inline=False
+                        )
+                        embed.set_footer(text='Thank you for reaching out to our support team')
+
+                        await modal_interaction.response.send_message(embed=embed, ephemeral=True)
+                    else:
+                        error_embed = discord.Embed(
+                            title='❌ Error',
+                            description='Failed to create ticket. Tickets system not found.',
+                            color=discord.Color.red()
+                        )
+                        await modal_interaction.response.send_message(embed=error_embed, ephemeral=True)
+
+                except Exception as e:
+                    error_embed = discord.Embed(
+                        title='❌ Something went wrong',
+                        description=f'Failed to create ticket. Please try again later.',
+                        color=discord.Color.red()
+                    )
+                    error_embed.add_field(name='Error Details', value=f'```{str(e)[:100]}```', inline=False)
+                    await modal_interaction.response.send_message(embed=error_embed, ephemeral=True)
+                    print(f'Error creating ticket: {e}')
 
         modal = TicketCreateModal()
         await interaction.response.send_modal(modal)
