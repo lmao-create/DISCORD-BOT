@@ -294,6 +294,9 @@ class TicketPanelView(discord.ui.View):
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
 
+            # Store reference for inner class
+            parent_cog = tickets_cog
+
             # Create modal for ticket creation
             class TicketCreateModal(discord.ui.Modal, title=f'Create {category.capitalize()} Ticket'):
                 title_input = discord.ui.TextInput(
@@ -310,10 +313,10 @@ class TicketPanelView(discord.ui.View):
                     style=discord.TextStyle.paragraph
                 )
 
-                async def on_submit(self, modal_interaction: discord.Interaction):
+                async def on_submit(inner_self, modal_interaction: discord.Interaction):
                     try:
                         # Validate inputs
-                        if not self.title_input.value or not self.description_input.value:
+                        if not inner_self.title_input.value or not inner_self.description_input.value:
                             error_embed = discord.Embed(
                                 title='❌ Invalid Input',
                                 description='Please fill in all required fields.',
@@ -322,11 +325,11 @@ class TicketPanelView(discord.ui.View):
                             await modal_interaction.response.send_message(embed=error_embed, ephemeral=True)
                             return
 
-                        if tickets_cog:
-                            ticket_id = tickets_cog.create_ticket(
+                        if parent_cog:
+                            ticket_id = parent_cog.create_ticket(
                                 modal_interaction.user.id,
-                                self.title_input.value,
-                                self.description_input.value,
+                                inner_self.title_input.value,
+                                inner_self.description_input.value,
                                 category,
                                 modal_interaction.guild_id
                             )
@@ -341,7 +344,7 @@ class TicketPanelView(discord.ui.View):
                             embed.add_field(name='Ticket ID', value=f'`{ticket_id}`', inline=False)
                             embed.add_field(name='Category', value=category.capitalize(), inline=True)
                             embed.add_field(name='Status', value='🟢 Open', inline=True)
-                            embed.add_field(name='Title', value=self.title_input.value, inline=False)
+                            embed.add_field(name='Title', value=inner_self.title_input.value, inline=False)
                             embed.add_field(
                                 name='📌 Note',
                                 value='You can use `/viewticket` to check the status of your ticket.',
@@ -361,7 +364,7 @@ class TicketPanelView(discord.ui.View):
                     except Exception as e:
                         error_embed = discord.Embed(
                             title='❌ Something went wrong',
-                            description=f'Failed to create ticket. Please try again later.',
+                            description='Failed to create ticket. Please try again later.',
                             color=discord.Color.red()
                         )
                         error_embed.add_field(name='Error Details', value=f'```{str(e)[:100]}```', inline=False)
