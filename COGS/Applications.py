@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from typing import Optional
 
+
 class ApplicationModal(discord.ui.Modal, title="Submit Your Application"):
     """Modal for submitting applications"""
 
@@ -110,8 +111,8 @@ class Applications(commands.Cog):
         self.save_config()
 
     async def save_application(self, user_id: int, username: str, name: str,
-                              email: str, reason: str, experience: str,
-                              guild_id: Optional[int], interaction: discord.Interaction):
+                               email: str, reason: str, experience: str,
+                               guild_id: Optional[int], interaction: discord.Interaction):
         """Save application data"""
         app_id = f"{user_id}_{datetime.now().timestamp()}"
 
@@ -139,12 +140,15 @@ class Applications(commands.Cog):
             color=discord.Color.green(),
             timestamp=datetime.now()
         )
-        embed.add_field(name='Application ID', value=f'`{app_id}`', inline=False)
+        embed.add_field(name='Application ID',
+                        value=f'`{app_id}`', inline=False)
         embed.add_field(name='Status', value='**Pending Review**', inline=True)
-        embed.add_field(name='Submitted At', value=f'<t:{int(datetime.now().timestamp())}:F>', inline=True)
+        embed.add_field(
+            name='Submitted At', value=f'<t:{int(datetime.now().timestamp())}:F>', inline=True)
         embed.add_field(name='Name', value=name, inline=True)
         embed.add_field(name='Email', value=email, inline=True)
-        embed.set_footer(text='You will be notified when your application is reviewed.')
+        embed.set_footer(
+            text='You will be notified when your application is reviewed.')
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -157,16 +161,21 @@ class Applications(commands.Cog):
                 color=discord.Color.green(),
                 timestamp=datetime.now()
             )
-            dm_embed.add_field(name='Your Application ID', value=f'```{app_id}```', inline=False)
+            dm_embed.add_field(name='Your Application ID',
+                               value=f'```{app_id}```', inline=False)
             dm_embed.add_field(name='Full Name', value=name, inline=True)
             dm_embed.add_field(name='Email', value=email, inline=True)
-            dm_embed.add_field(name='Status', value='**⏳ Pending Review**', inline=False)
-            dm_embed.add_field(name='📌 Note', value='Keep this application ID safe. You can use `/viewapplication` command to check your application status.', inline=False)
-            dm_embed.set_footer(text='You will be notified when your application is reviewed.')
+            dm_embed.add_field(
+                name='Status', value='**⏳ Pending Review**', inline=False)
+            dm_embed.add_field(
+                name='📌 Note', value='Keep this application ID safe. You can use `/viewapplication` command to check your application status.', inline=False)
+            dm_embed.set_footer(
+                text='You will be notified when your application is reviewed.')
 
             await user.send(embed=dm_embed)
         except discord.Forbidden:
-            print(f'Could not send DM to user {user_id} - they may have DMs disabled')
+            print(
+                f'Could not send DM to user {user_id} - they may have DMs disabled')
         except Exception as e:
             print(f'Error sending DM to user {user_id}: {e}')
 
@@ -178,7 +187,8 @@ class Applications(commands.Cog):
     @app_commands.command(name='myapplications', description='View your submitted applications')
     async def my_applications(self, interaction: discord.Interaction):
         """Show user's applications"""
-        user_apps = [app for app in self.applications.values() if app['user_id'] == interaction.user.id]
+        user_apps = [app for app in self.applications.values(
+        ) if app['user_id'] == interaction.user.id]
 
         if not user_apps:
             embed = discord.Embed(
@@ -234,23 +244,30 @@ class Applications(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        status_color = discord.Color.yellow() if app['status'] == 'pending' else discord.Color.green() if app['status'] == 'approved' else discord.Color.red()
+        status_color = discord.Color.yellow() if app['status'] == 'pending' else discord.Color.green(
+        ) if app['status'] == 'approved' else discord.Color.red()
 
         embed = discord.Embed(
             title='📄 Application Details',
             color=status_color,
             timestamp=datetime.now()
         )
-        embed.add_field(name='Application ID', value=f'`{app["id"]}`', inline=False)
+        embed.add_field(name='Application ID',
+                        value=f'`{app["id"]}`', inline=False)
         embed.add_field(name='Full Name', value=app['full_name'], inline=True)
         embed.add_field(name='Email', value=app['email'], inline=True)
-        embed.add_field(name='Status', value=app['status'].capitalize(), inline=True)
-        embed.add_field(name='Reason for Joining', value=app['reason'], inline=False)
-        embed.add_field(name='Experience', value=app['experience'], inline=False)
-        embed.add_field(name='Submitted At', value=f"<t:{int(datetime.fromisoformat(app['submitted_at']).timestamp())}:F>", inline=True)
+        embed.add_field(
+            name='Status', value=app['status'].capitalize(), inline=True)
+        embed.add_field(name='Reason for Joining',
+                        value=app['reason'], inline=False)
+        embed.add_field(name='Experience',
+                        value=app['experience'], inline=False)
+        embed.add_field(
+            name='Submitted At', value=f"<t:{int(datetime.fromisoformat(app['submitted_at']).timestamp())}:F>", inline=True)
 
         if app['reviewed_at']:
-            embed.add_field(name='Reviewed At', value=f"<t:{int(datetime.fromisoformat(app['reviewed_at']).timestamp())}:F>", inline=True)
+            embed.add_field(
+                name='Reviewed At', value=f"<t:{int(datetime.fromisoformat(app['reviewed_at']).timestamp())}:F>", inline=True)
 
         embed.set_footer(text=f'Submitted by {app["username"]}')
 
@@ -285,14 +302,19 @@ class Applications(commands.Cog):
             timestamp=datetime.now()
         )
 
-        pending = sum(1 for app in self.applications.values() if app['status'] == 'pending')
-        approved = sum(1 for app in self.applications.values() if app['status'] == 'approved')
-        rejected = sum(1 for app in self.applications.values() if app['status'] == 'rejected')
+        pending = sum(1 for app in self.applications.values()
+                      if app['status'] == 'pending')
+        approved = sum(1 for app in self.applications.values()
+                       if app['status'] == 'approved')
+        rejected = sum(1 for app in self.applications.values()
+                       if app['status'] == 'rejected')
 
-        embed.add_field(name='📊 Summary', value=f'**Pending:** {pending}\n**Approved:** {approved}\n**Rejected:** {rejected}', inline=False)
+        embed.add_field(
+            name='📊 Summary', value=f'**Pending:** {pending}\n**Approved:** {approved}\n**Rejected:** {rejected}', inline=False)
 
         # Show recent applications
-        recent = sorted(self.applications.values(), key=lambda x: x['submitted_at'], reverse=True)[:10]
+        recent = sorted(self.applications.values(),
+                        key=lambda x: x['submitted_at'], reverse=True)[:10]
 
         for app in recent:
             status_emoji = '⏳' if app['status'] == 'pending' else '✅' if app['status'] == 'approved' else '❌'
@@ -302,7 +324,8 @@ class Applications(commands.Cog):
                 inline=False
             )
 
-        embed.set_footer(text=f'Total Applications: {len(self.applications)} | Showing 10 most recent')
+        embed.set_footer(
+            text=f'Total Applications: {len(self.applications)} | Showing 10 most recent')
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -350,10 +373,13 @@ class Applications(commands.Cog):
             color=discord.Color.green() if decision == 'approved' else discord.Color.red(),
             timestamp=datetime.now()
         )
-        embed.add_field(name='Application ID', value=f'`{application_id}`', inline=False)
-        embed.add_field(name='Applicant', value=f'{app["full_name"]} (@{app["username"]})', inline=True)
+        embed.add_field(name='Application ID',
+                        value=f'`{application_id}`', inline=False)
+        embed.add_field(
+            name='Applicant', value=f'{app["full_name"]} (@{app["username"]})', inline=True)
         embed.add_field(name='Email', value=app['email'], inline=True)
-        embed.add_field(name='Decision', value=decision.capitalize(), inline=True)
+        embed.add_field(name='Decision',
+                        value=decision.capitalize(), inline=True)
         embed.set_footer(text=f'Reviewed by {interaction.user.name}')
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -368,9 +394,12 @@ class Applications(commands.Cog):
                     color=discord.Color.green() if decision == 'approved' else discord.Color.red(),
                     timestamp=datetime.now()
                 )
-                result_embed.add_field(name='Applicant', value=f'{app["full_name"]}', inline=True)
-                result_embed.add_field(name='Decision', value=decision.capitalize(), inline=True)
-                result_embed.set_footer(text=f'Reviewed by {interaction.user.name}')
+                result_embed.add_field(
+                    name='Applicant', value=f'{app["full_name"]}', inline=True)
+                result_embed.add_field(
+                    name='Decision', value=decision.capitalize(), inline=True)
+                result_embed.set_footer(
+                    text=f'Reviewed by {interaction.user.name}')
 
                 # Create mention string for the user
                 mention = f'<@{app["user_id"]}>'
@@ -464,8 +493,10 @@ class Applications(commands.Cog):
             timestamp=datetime.now()
         )
         embed.add_field(name='Channel', value=channel.mention, inline=True)
-        embed.add_field(name='Channel ID', value=f'`{channel.id}`', inline=True)
-        embed.set_footer(text='Users will be pinged with their application decisions.')
+        embed.add_field(name='Channel ID',
+                        value=f'`{channel.id}`', inline=True)
+        embed.set_footer(
+            text='Users will be pinged with their application decisions.')
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -503,8 +534,10 @@ class Applications(commands.Cog):
                 timestamp=datetime.now()
             )
             embed.add_field(name='Channel', value=channel.mention, inline=True)
-            embed.add_field(name='Channel ID', value=f'`{channel.id}`', inline=True)
-            embed.set_footer(text='Users will be pinged with their application decisions.')
+            embed.add_field(name='Channel ID',
+                            value=f'`{channel.id}`', inline=True)
+            embed.set_footer(
+                text='Users will be pinged with their application decisions.')
             await interaction.response.send_message(embed=embed, ephemeral=True)
         except discord.NotFound:
             embed = discord.Embed(
