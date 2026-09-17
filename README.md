@@ -37,6 +37,14 @@ A feature-rich Discord bot built with discord.py featuring music playback, moder
 - Configurable results channel for posting decisions
 - Application history and status tracking
 
+### 🎫 Tickets
+- Support ticket system with categories (general, bug, feature, support)
+- User ticket creation and management
+- Admin ticket assignment and status tracking
+- Priority levels (low, medium, high, urgent)
+- Comments and notes on tickets
+- Ticket history and statistics
+
 ## Requirements
 
 - Python 3.8+
@@ -244,11 +252,22 @@ docker run -d -e TOKEN=your_token discord-bot
 - `/viewresultschannel` - View current results channel
 - `/clearresultschannel` - Remove results channel configuration
 
+### Ticket Commands
+**User Commands:**
+- `/createticket <title> <description> [category]` - Create a support ticket
+- `/mytickets` - View your submitted tickets
+- `/viewticket <id>` - View ticket details
+- `/closeticket <id>` - Close one of your tickets
+
+**Admin Commands:**
+- `/alltickets` - View all tickets with summary (admin only)
+
 ## Project Structure
 
 ```
 discord-bot/
 ├── Bot.py              # Main bot entry point
+├── web_dashboard.py    # Flask web dashboard server
 ├── COGS/               # Bot command modules
 │   ├── Music.py        # Music player commands
 │   ├── Moderation.py   # Moderation commands
@@ -256,11 +275,20 @@ discord-bot/
 │   ├── Fun.py          # Fun commands
 │   ├── Logs.py         # Logging commands
 │   ├── Welcome.py      # Welcome system
-│   └── Applications.py # Application management system
+│   ├── Applications.py # Application management system
+│   └── Tickets.py      # Support ticket system
+├── templates/          # Web dashboard templates
+│   └── dashboard.html  # Main dashboard UI
+├── static/             # Web dashboard static files
+│   ├── css/
+│   │   └── style.css   # Dashboard styling
+│   └── js/
+│       └── script.js   # Dashboard functionality
 ├── .env.example        # Example environment file
 ├── .gitignore          # Git ignore rules
 ├── requirements.txt    # Python dependencies
-└── README.md           # This file
+├── README.md           # This file
+└── WEB_DASHBOARD_README.md # Dashboard documentation
 ```
 
 ## Configuration
@@ -280,6 +308,8 @@ The bot stores data in JSON files:
 - `welcome_config.json` - Welcome system configuration
 - `applications_data.json` - Submitted applications
 - `applications_config.json` - Application system configuration (results channel)
+- `tickets_data.json` - Support tickets
+- `tickets_config.json` - Tickets system configuration
 
 ## Troubleshooting
 
