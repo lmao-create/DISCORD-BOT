@@ -76,18 +76,13 @@ class TicketsPanel(commands.Cog):
         # Create the panel embed
         panel_embed = discord.Embed(
             title='🎫 Tickets',
-            description='To create a ticket use the **Create Ticket** button below',
+            description='To create a ticket click one of the buttons below',
             color=discord.Color.blurple(),
             timestamp=datetime.now()
         )
         panel_embed.add_field(
             name='🆘 Support System',
-            value='Click the button below to create a support ticket. We\'re here to help!',
-            inline=False
-        )
-        panel_embed.add_field(
-            name='📌 Categories',
-            value='🐛 **Bug** - Report a bug\n💡 **Feature** - Request a feature\n❓ **Support** - Get help\n📝 **General** - General inquiries',
+            value='Select a category and describe your issue. Our team will respond shortly.',
             inline=False
         )
         panel_embed.set_footer(text='Your ticket will be reviewed by our support team')
@@ -222,63 +217,58 @@ class TicketsPanel(commands.Cog):
 
 
 class TicketPanelView(discord.ui.View):
-    """View for the ticket panel with Create Ticket button"""
+    """View for the ticket panel with Create Ticket buttons for each category"""
 
     def __init__(self, bot):
         super().__init__(timeout=None)
         self.bot = bot
 
     @discord.ui.button(
-        label='Create Ticket',
-        style=discord.ButtonStyle.primary,
-        emoji='🎫',
-        custom_id='create_ticket_btn'
+        label='🐛 Bug',
+        style=discord.ButtonStyle.red,
+        custom_id='create_ticket_bug'
     )
-    async def create_ticket_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        """Handle the create ticket button press"""
-        # Get the Tickets cog
+    async def bug_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Handle bug ticket creation"""
+        await self._create_ticket_modal(interaction, 'bug')
+
+    @discord.ui.button(
+        label='💡 Feature',
+        style=discord.ButtonStyle.blurple,
+        custom_id='create_ticket_feature'
+    )
+    async def feature_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Handle feature ticket creation"""
+        await self._create_ticket_modal(interaction, 'feature')
+
+    @discord.ui.button(
+        label='❓ Support',
+        style=discord.ButtonStyle.green,
+        custom_id='create_ticket_support'
+    )
+    async def support_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Handle support ticket creation"""
+        await self._create_ticket_modal(interaction, 'support')
+
+    @discord.ui.button(
+        label='📝 General',
+        style=discord.ButtonStyle.grey,
+        custom_id='create_ticket_general'
+    )
+    async def general_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        """Handle general ticket creation"""
+        await self._create_ticket_modal(interaction, 'general')
+
+    async def _create_ticket_modal(self, interaction: discord.Interaction, category: str):
+        """Show modal for ticket creation with pre-selected category"""
         tickets_cog = self.bot.get_cog('Tickets')
 
         if not tickets_cog:
             await interaction.response.send_message('❌ Tickets system not found', ephemeral=True)
             return
 
-        # Show category selection
-        await interaction.response.send_message(
-            embed=discord.Embed(
-                title='🎫 Create Ticket',
-                description='Select a ticket category below',
-                color=discord.Color.blurple()
-            ),
-            view=TicketCategoryView(self.bot),
-            ephemeral=True
-        )
-
-
-class TicketCategoryView(discord.ui.View):
-    """View for selecting ticket category"""
-
-    def __init__(self, bot):
-        super().__init__()
-        self.bot = bot
-
-    @discord.ui.select(
-        placeholder='Choose a ticket category...',
-        min_values=1,
-        max_values=1,
-        options=[
-            discord.SelectOption(label='🐛 Bug Report', value='bug', description='Report a bug or issue'),
-            discord.SelectOption(label='💡 Feature Request', value='feature', description='Suggest a new feature'),
-            discord.SelectOption(label='❓ Support', value='support', description='Get help or support'),
-            discord.SelectOption(label='📝 General', value='general', description='General inquiries'),
-        ]
-    )
-    async def category_select(self, interaction: discord.Interaction, select: discord.ui.Select):
-        """Handle category selection"""
-        category = select.values[0]
-
         # Create modal for ticket creation
-        class TicketCreateModal(discord.ui.Modal, title='Create Ticket'):
+        class TicketCreateModal(discord.ui.Modal, title=f'Create {category.capitalize()} Ticket'):
             title_input = discord.ui.TextInput(
                 label='Ticket Title',
                 placeholder='Brief description of your issue...',
@@ -294,7 +284,6 @@ class TicketCategoryView(discord.ui.View):
             )
 
             async def on_submit(self, modal_interaction: discord.Interaction):
-                tickets_cog = self.bot.get_cog('Tickets')
                 if tickets_cog:
                     ticket_id = tickets_cog.create_ticket(
                         modal_interaction.user.id,
@@ -316,9 +305,7 @@ class TicketCategoryView(discord.ui.View):
 
                     await modal_interaction.response.send_message(embed=embed, ephemeral=True)
 
-        # Pass bot reference to modal
         modal = TicketCreateModal()
-        modal.bot = self.bot
         await interaction.response.send_modal(modal)
 
 
