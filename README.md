@@ -263,6 +263,9 @@ docker run -d -e TOKEN=your_token discord-bot
 
 **Admin Commands:**
 - `/alltickets` - View all tickets with summary (admin only)
+- `/setticketpanel <channel>` - Create a persistent ticket panel in a channel
+- `/viewticketpanel` - View current ticket panel settings
+- `/deleteticketpanel` - Remove the ticket panel (admin only)
 
 ## Project Structure
 
@@ -279,7 +282,8 @@ discord-bot/
 │   ├── Welcome.py      # Welcome system
 │   ├── Applications.py # Application management system
 │   ├── ApplicationsPanel.py # Application panel UI
-│   └── Tickets.py      # Support ticket system
+│   ├── Tickets.py      # Support ticket system
+│   └── TicketsPanel.py # Ticket panel UI
 ├── templates/          # Web dashboard templates
 │   └── dashboard.html  # Main dashboard UI
 ├── static/             # Web dashboard static files
@@ -314,6 +318,7 @@ The bot stores data in JSON files:
 - `applications_panel_config.json` - Application panel configuration (channel and message IDs)
 - `tickets_data.json` - Support tickets
 - `tickets_config.json` - Tickets system configuration
+- `tickets_panel_config.json` - Ticket panel configuration (channel and message IDs)
 
 ## Troubleshooting
 
