@@ -251,6 +251,8 @@ docker run -d -e TOKEN=your_token discord-bot
 - `/setresultschannel <channel>` - Configure where decisions are posted
 - `/viewresultschannel` - View current results channel
 - `/clearresultschannel` - Remove results channel configuration
+- `/setapplicationpanel <channel>` - Create a persistent application panel in a channel
+- `/viewapplicationpanel` - View current application panel settings
 
 ### Ticket Commands
 **User Commands:**
@@ -276,6 +278,7 @@ discord-bot/
 │   ├── Logs.py         # Logging commands
 │   ├── Welcome.py      # Welcome system
 │   ├── Applications.py # Application management system
+│   ├── ApplicationsPanel.py # Application panel UI
 │   └── Tickets.py      # Support ticket system
 ├── templates/          # Web dashboard templates
 │   └── dashboard.html  # Main dashboard UI
@@ -308,6 +311,7 @@ The bot stores data in JSON files:
 - `welcome_config.json` - Welcome system configuration
 - `applications_data.json` - Submitted applications
 - `applications_config.json` - Application system configuration (results channel)
+- `applications_panel_config.json` - Application panel configuration (channel and message IDs)
 - `tickets_data.json` - Support tickets
 - `tickets_config.json` - Tickets system configuration
 
