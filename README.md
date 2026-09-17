@@ -78,11 +78,36 @@ A feature-rich Discord bot built with discord.py featuring music playback, moder
 
 ## Running the Bot
 
+**Start the Discord Bot:**
 ```bash
 python Bot.py
 ```
 
 The bot will start and connect to Discord. All cogs will be loaded automatically from the `COGS` folder.
+
+**Start the Web Dashboard (Optional):**
+```bash
+python web_dashboard.py
+```
+
+Access the dashboard at `http://localhost:5000` to manage applications through a web interface.
+
+## Web Dashboard
+
+The bot includes a modern web dashboard for managing applications on localhost. See [WEB_DASHBOARD_README.md](WEB_DASHBOARD_README.md) for complete documentation.
+
+**Features:**
+- 📊 Real-time statistics and analytics
+- 📝 View and review all applications
+- ⏰ Scheduled reminders for pending reviews
+- 📥 Export to CSV or Excel
+- 🎨 Modern, responsive interface
+
+**Quick Start:**
+```bash
+python web_dashboard.py
+```
+Then visit `http://localhost:5000`
 
 ## Hosting Options
 
