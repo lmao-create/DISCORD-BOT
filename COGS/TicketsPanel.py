@@ -282,93 +282,109 @@ class TicketPanelView(discord.ui.View):
 
     async def _create_ticket_modal(self, interaction: discord.Interaction, category: str):
         """Show modal for ticket creation with pre-selected category"""
-        tickets_cog = self.bot.get_cog('Tickets')
+        try:
+            tickets_cog = self.bot.get_cog('Tickets')
 
-        if not tickets_cog:
-            embed = discord.Embed(
-                title='❌ Error',
-                description='Tickets system not found. Please try again later.',
-                color=discord.Color.red()
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
+            if not tickets_cog:
+                embed = discord.Embed(
+                    title='❌ Error',
+                    description='Tickets system not found. Please try again later.',
+                    color=discord.Color.red()
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
 
-        # Create modal for ticket creation
-        class TicketCreateModal(discord.ui.Modal, title=f'Create {category.capitalize()} Ticket'):
-            title_input = discord.ui.TextInput(
-                label='Ticket Title',
-                placeholder='Brief description of your issue...',
-                required=True,
-                max_length=100
-            )
-            description_input = discord.ui.TextInput(
-                label='Description',
-                placeholder='Provide more details...',
-                required=True,
-                max_length=1000,
-                style=discord.TextStyle.paragraph
-            )
+            # Create modal for ticket creation
+            class TicketCreateModal(discord.ui.Modal, title=f'Create {category.capitalize()} Ticket'):
+                title_input = discord.ui.TextInput(
+                    label='Ticket Title',
+                    placeholder='Brief description of your issue...',
+                    required=True,
+                    max_length=100
+                )
+                description_input = discord.ui.TextInput(
+                    label='Description',
+                    placeholder='Provide more details...',
+                    required=True,
+                    max_length=1000,
+                    style=discord.TextStyle.paragraph
+                )
 
-            async def on_submit(self, modal_interaction: discord.Interaction):
-                try:
-                    # Validate inputs
-                    if not self.title_input.value or not self.description_input.value:
+                async def on_submit(self, modal_interaction: discord.Interaction):
+                    try:
+                        # Validate inputs
+                        if not self.title_input.value or not self.description_input.value:
+                            error_embed = discord.Embed(
+                                title='❌ Invalid Input',
+                                description='Please fill in all required fields.',
+                                color=discord.Color.red()
+                            )
+                            await modal_interaction.response.send_message(embed=error_embed, ephemeral=True)
+                            return
+
+                        if tickets_cog:
+                            ticket_id = tickets_cog.create_ticket(
+                                modal_interaction.user.id,
+                                self.title_input.value,
+                                self.description_input.value,
+                                category,
+                                modal_interaction.guild_id
+                            )
+
+                            # Success embed
+                            embed = discord.Embed(
+                                title='✅ Ticket Created Successfully',
+                                description='Your support ticket has been created and our team will review it shortly.',
+                                color=discord.Color.green(),
+                                timestamp=datetime.now()
+                            )
+                            embed.add_field(name='Ticket ID', value=f'`{ticket_id}`', inline=False)
+                            embed.add_field(name='Category', value=category.capitalize(), inline=True)
+                            embed.add_field(name='Status', value='🟢 Open', inline=True)
+                            embed.add_field(name='Title', value=self.title_input.value, inline=False)
+                            embed.add_field(
+                                name='📌 Note',
+                                value='You can use `/viewticket` to check the status of your ticket.',
+                                inline=False
+                            )
+                            embed.set_footer(text='Thank you for reaching out to our support team')
+
+                            await modal_interaction.response.send_message(embed=embed, ephemeral=True)
+                        else:
+                            error_embed = discord.Embed(
+                                title='❌ Error',
+                                description='Failed to create ticket. Tickets system not found.',
+                                color=discord.Color.red()
+                            )
+                            await modal_interaction.response.send_message(embed=error_embed, ephemeral=True)
+
+                    except Exception as e:
                         error_embed = discord.Embed(
-                            title='❌ Invalid Input',
-                            description='Please fill in all required fields.',
+                            title='❌ Something went wrong',
+                            description=f'Failed to create ticket. Please try again later.',
                             color=discord.Color.red()
                         )
-                        await modal_interaction.response.send_message(embed=error_embed, ephemeral=True)
-                        return
+                        error_embed.add_field(name='Error Details', value=f'```{str(e)[:100]}```', inline=False)
+                        try:
+                            await modal_interaction.response.send_message(embed=error_embed, ephemeral=True)
+                        except:
+                            pass
+                        print(f'Error creating ticket: {e}')
 
-                    if tickets_cog:
-                        ticket_id = tickets_cog.create_ticket(
-                            modal_interaction.user.id,
-                            self.title_input.value,
-                            self.description_input.value,
-                            category,
-                            modal_interaction.guild_id
-                        )
+            modal = TicketCreateModal()
+            await interaction.response.send_modal(modal)
 
-                        # Success embed
-                        embed = discord.Embed(
-                            title='✅ Ticket Created Successfully',
-                            description='Your support ticket has been created and our team will review it shortly.',
-                            color=discord.Color.green(),
-                            timestamp=datetime.now()
-                        )
-                        embed.add_field(name='Ticket ID', value=f'`{ticket_id}`', inline=False)
-                        embed.add_field(name='Category', value=category.capitalize(), inline=True)
-                        embed.add_field(name='Status', value='🟢 Open', inline=True)
-                        embed.add_field(name='Title', value=self.title_input.value, inline=False)
-                        embed.add_field(
-                            name='📌 Note',
-                            value='You can use `/viewticket` to check the status of your ticket.',
-                            inline=False
-                        )
-                        embed.set_footer(text='Thank you for reaching out to our support team')
-
-                        await modal_interaction.response.send_message(embed=embed, ephemeral=True)
-                    else:
-                        error_embed = discord.Embed(
-                            title='❌ Error',
-                            description='Failed to create ticket. Tickets system not found.',
-                            color=discord.Color.red()
-                        )
-                        await modal_interaction.response.send_message(embed=error_embed, ephemeral=True)
-
-                except Exception as e:
-                    error_embed = discord.Embed(
-                        title='❌ Something went wrong',
-                        description=f'Failed to create ticket. Please try again later.',
-                        color=discord.Color.red()
-                    )
-                    error_embed.add_field(name='Error Details', value=f'```{str(e)[:100]}```', inline=False)
-                    await modal_interaction.response.send_message(embed=error_embed, ephemeral=True)
-                    print(f'Error creating ticket: {e}')
-
-        modal = TicketCreateModal()
-        await interaction.response.send_modal(modal)
+        except Exception as e:
+            print(f'Error in _create_ticket_modal: {e}')
+            try:
+                error_embed = discord.Embed(
+                    title='❌ Error',
+                    description='Failed to open ticket form. Please try again.',
+                    color=discord.Color.red()
+                )
+                await interaction.response.send_message(embed=error_embed, ephemeral=True)
+            except:
+                pass
 
 
 async def setup(bot):
