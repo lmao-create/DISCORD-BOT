@@ -18,6 +18,9 @@
             <a href="#" data-view="applications" class="nav-item">
                 <span class="icon">📝</span> Applications
             </a>
+            <a href="#" data-view="tickets" class="nav-item">
+                <span class="icon">🎫</span> Tickets
+            </a>
             <a href="#" data-view="reminders" class="nav-item">
                 <span class="icon">⏰</span> Reminders
             </a>
@@ -109,6 +112,24 @@
             <div id="applications-container" class="applications-list"></div>
         </div>
 
+        <!-- Tickets View -->
+        <div id="tickets" class="view">
+            <header>
+                <h1>Support Tickets</h1>
+                <div class="header-controls">
+                    <select id="ticket-status-filter" onchange="filterTickets()">
+                        <option value="all">All Status</option>
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                    <button class="refresh-btn" onclick="loadTickets()">🔄 Refresh</button>
+                </div>
+            </header>
+
+            <div id="tickets-container" class="tickets-list"></div>
+        </div>
+
         <!-- Reminders View -->
         <div id="reminders" class="view">
             <header>
@@ -187,6 +208,47 @@
                 <div class="form-actions">
                     <button class="btn-primary" onclick="submitReview()">Submit Review</button>
                     <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket Modal -->
+    <div id="ticket-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTicketModal()">&times;</span>
+            <h2>Ticket Details</h2>
+
+            <div id="ticket-details" class="app-details"></div>
+
+            <div class="ticket-form">
+                <div class="form-group">
+                    <label>Status:</label>
+                    <select id="ticket-status">
+                        <option value="open">Open</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Priority:</label>
+                    <select id="ticket-priority">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Add Comment:</label>
+                    <textarea id="ticket-comment" placeholder="Add a comment..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn-primary" onclick="updateTicket()">Update Ticket</button>
+                    <button class="btn-secondary" onclick="closeTicketModal()">Close</button>
                 </div>
             </div>
         </div>

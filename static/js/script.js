@@ -1,15 +1,18 @@
 // Global variables
 let currentAppId = null;
+let currentTicketId = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     setupNavigation();
     refreshDashboard();
     loadApplications();
+    loadTickets();
     loadReminders();
 
     // Auto-refresh every 30 seconds
     setInterval(refreshDashboard, 30000);
+    setInterval(loadTickets, 30000);
 });
 
 // Navigation
@@ -41,6 +44,8 @@ function showView(viewName) {
         refreshDashboard();
     } else if (viewName === 'applications') {
         loadApplications();
+    } else if (viewName === 'tickets') {
+        loadTickets();
     } else if (viewName === 'reminders') {
         loadReminders();
     }
@@ -377,6 +382,192 @@ function updateReminderSchedule() {
     scheduleReminder();
 }
 
+// Tickets
+async function loadTickets() {
+    try {
+        const status = document.getElementById('ticket-status-filter')?.value || 'all';
+        const response = await fetch(`/api/tickets?status=${status}`);
+        const data = await response.json();
+
+        if (data.success) {
+            const container = document.getElementById('tickets-container');
+
+            if (data.data.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><p>No tickets found</p></div>';
+                return;
+            }
+
+            container.innerHTML = data.data.map(ticket => createTicketCard(ticket)).join('');
+        }
+    } catch (error) {
+        console.error('Error loading tickets:', error);
+    }
+}
+
+function filterTickets() {
+    loadTickets();
+}
+
+function createTicketCard(ticket) {
+    const created = new Date(ticket.created_at).toLocaleString();
+    const statusClass = ticket.status.toLowerCase().replace('_', '-');
+    const priorityClass = ticket.priority.toLowerCase();
+
+    const priorityEmoji = {
+        'low': '🟢',
+        'medium': '🟡',
+        'high': '🔴',
+        'urgent': '⚫'
+    }[ticket.priority] || '🟡';
+
+    const statusEmoji = {
+        'open': '🟢',
+        'in_progress': '🔵',
+        'closed': '⚫'
+    }[ticket.status] || '⚫';
+
+    return `
+        <div class="ticket-card ${statusClass}">
+            <div class="ticket-header">
+                <div class="ticket-title">
+                    <span class="ticket-icon">🎫</span> ${escapeHtml(ticket.title)}
+                </div>
+                <div class="ticket-badges">
+                    <span class="status-badge ${statusClass}">${statusEmoji} ${ticket.status.replace('_', ' ')}</span>
+                    <span class="priority-badge priority-${priorityClass}">${priorityEmoji} ${ticket.priority}</span>
+                </div>
+            </div>
+            <div class="ticket-meta">
+                <div class="ticket-meta-item">
+                    <div class="ticket-meta-label">ID</div>
+                    <div class="ticket-meta-value"><code>${ticket.id}</code></div>
+                </div>
+                <div class="ticket-meta-item">
+                    <div class="ticket-meta-label">Category</div>
+                    <div class="ticket-meta-value">${ticket.category.charAt(0).toUpperCase() + ticket.category.slice(1)}</div>
+                </div>
+                <div class="ticket-meta-item">
+                    <div class="ticket-meta-label">Created</div>
+                    <div class="ticket-meta-value">${created}</div>
+                </div>
+                <div class="ticket-meta-item">
+                    <div class="ticket-meta-label">Comments</div>
+                    <div class="ticket-meta-value">${ticket.comments ? ticket.comments.length : 0}</div>
+                </div>
+            </div>
+            <div class="ticket-description">${escapeHtml(ticket.description.substring(0, 150))}${ticket.description.length > 150 ? '...' : ''}</div>
+            <div class="ticket-actions">
+                <button class="btn-primary" onclick="openTicketModal('${ticket.id}')">View & Edit</button>
+            </div>
+        </div>
+    `;
+}
+
+async function openTicketModal(ticketId) {
+    try {
+        const response = await fetch(`/api/tickets/${ticketId}`);
+        const data = await response.json();
+
+        if (data.success) {
+            currentTicketId = ticketId;
+            const ticket = data.data;
+
+            const detailsHtml = `
+                <div class="app-details-item">
+                    <div class="app-details-label">Title:</div>
+                    <div class="app-details-value">${escapeHtml(ticket.title)}</div>
+                </div>
+                <div class="app-details-item">
+                    <div class="app-details-label">ID:</div>
+                    <div class="app-details-value"><code>${ticket.id}</code></div>
+                </div>
+                <div class="app-details-item">
+                    <div class="app-details-label">Category:</div>
+                    <div class="app-details-value">${ticket.category}</div>
+                </div>
+                <div class="app-details-item">
+                    <div class="app-details-label">Description:</div>
+                    <div class="app-details-value">${escapeHtml(ticket.description)}</div>
+                </div>
+                <div class="app-details-item">
+                    <div class="app-details-label">Created:</div>
+                    <div class="app-details-value">${new Date(ticket.created_at).toLocaleString()}</div>
+                </div>
+                <div class="app-details-item">
+                    <div class="app-details-label">Updated:</div>
+                    <div class="app-details-value">${new Date(ticket.updated_at).toLocaleString()}</div>
+                </div>
+                ${ticket.assigned_to ? `
+                    <div class="app-details-item">
+                        <div class="app-details-label">Assigned To:</div>
+                        <div class="app-details-value">User #${ticket.assigned_to}</div>
+                    </div>
+                ` : ''}
+            `;
+
+            document.getElementById('ticket-details').innerHTML = detailsHtml;
+            document.getElementById('ticket-status').value = ticket.status;
+            document.getElementById('ticket-priority').value = ticket.priority;
+            document.getElementById('ticket-comment').value = '';
+
+            document.getElementById('ticket-modal').classList.add('show');
+        }
+    } catch (error) {
+        console.error('Error opening ticket modal:', error);
+    }
+}
+
+function closeTicketModal() {
+    document.getElementById('ticket-modal').classList.remove('show');
+    currentTicketId = null;
+}
+
+async function updateTicket() {
+    if (!currentTicketId) return;
+
+    const status = document.getElementById('ticket-status').value;
+    const priority = document.getElementById('ticket-priority').value;
+    const comment = document.getElementById('ticket-comment').value;
+
+    try {
+        const updateResponse = await fetch(`/api/tickets/${currentTicketId}/update`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status, priority })
+        });
+
+        const updateData = await updateResponse.json();
+
+        if (!updateData.success) {
+            alert('Error updating ticket: ' + updateData.error);
+            return;
+        }
+
+        if (comment.trim()) {
+            await fetch(`/api/tickets/${currentTicketId}/comment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: 'Admin',
+                    user_id: 0,
+                    content: comment
+                })
+            });
+        }
+
+        alert('Ticket updated successfully!');
+        closeTicketModal();
+        loadTickets();
+    } catch (error) {
+        console.error('Error updating ticket:', error);
+        alert('Error updating ticket');
+    }
+}
+
 // Export
 function exportCSV() {
     window.location.href = '/api/export/csv';
@@ -400,8 +591,13 @@ function escapeHtml(text) {
 
 // Close modal when clicking outside
 window.onclick = function(event) {
-    const modal = document.getElementById('review-modal');
-    if (event.target === modal) {
+    const reviewModal = document.getElementById('review-modal');
+    const ticketModal = document.getElementById('ticket-modal');
+
+    if (event.target === reviewModal) {
         closeModal();
+    }
+    if (event.target === ticketModal) {
+        closeTicketModal();
     }
 }

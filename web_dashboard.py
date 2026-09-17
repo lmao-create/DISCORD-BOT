@@ -16,6 +16,8 @@ CORS(app)
 # Configuration
 DATA_FILE = 'applications_data.json'
 CONFIG_FILE = 'applications_config.json'
+TICKETS_FILE = 'tickets_data.json'
+TICKETS_CONFIG_FILE = 'tickets_config.json'
 
 # Store for scheduler
 pending_reminders = {}
@@ -43,6 +45,34 @@ def load_config():
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+
+def load_tickets():
+    """Load tickets from JSON file"""
+    if os.path.exists(TICKETS_FILE):
+        try:
+            with open(TICKETS_FILE, 'r') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+
+def save_tickets(data):
+    """Save tickets to JSON file"""
+    with open(TICKETS_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
+def load_tickets_config():
+    """Load tickets configuration from JSON file"""
+    if os.path.exists(TICKETS_CONFIG_FILE):
+        try:
+            with open(TICKETS_CONFIG_FILE, 'r') as f:
                 return json.load(f)
         except:
             return {}
@@ -316,6 +346,153 @@ def schedule_reminder():
         'success': True,
         'message': f'Reminder scheduled every {hours} hours',
         'next_check': datetime.now().timestamp()
+    })
+
+
+# Tickets API
+@app.route('/api/tickets', methods=['GET'])
+def get_tickets():
+    """Get all tickets with optional filtering"""
+    tickets = load_tickets()
+    status_filter = request.args.get('status', 'all')
+
+    tickets_list = list(tickets.values())
+
+    # Filter by status
+    if status_filter != 'all':
+        tickets_list = [t for t in tickets_list if t.get('status') == status_filter]
+
+    # Sort by creation date (newest first)
+    tickets_list.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+
+    return jsonify({
+        'success': True,
+        'data': tickets_list,
+        'total': len(tickets),
+        'filtered': len(tickets_list)
+    })
+
+
+@app.route('/api/tickets/<ticket_id>', methods=['GET'])
+def get_ticket(ticket_id):
+    """Get a specific ticket"""
+    tickets = load_tickets()
+
+    if ticket_id not in tickets:
+        return jsonify({'success': False, 'error': 'Ticket not found'}), 404
+
+    return jsonify({
+        'success': True,
+        'data': tickets[ticket_id]
+    })
+
+
+@app.route('/api/tickets/<ticket_id>/update', methods=['POST'])
+def update_ticket(ticket_id):
+    """Update ticket status, priority, or assignment"""
+    tickets = load_tickets()
+
+    if ticket_id not in tickets:
+        return jsonify({'success': False, 'error': 'Ticket not found'}), 404
+
+    data = request.get_json()
+    ticket = tickets[ticket_id]
+
+    # Update status
+    if 'status' in data:
+        ticket['status'] = data['status']
+        if data['status'] == 'closed':
+            ticket['closed_at'] = datetime.now().isoformat()
+
+    # Update priority
+    if 'priority' in data:
+        if data['priority'] in ['low', 'medium', 'high', 'urgent']:
+            ticket['priority'] = data['priority']
+
+    # Assign ticket
+    if 'assigned_to' in data:
+        ticket['assigned_to'] = data['assigned_to']
+
+    ticket['updated_at'] = datetime.now().isoformat()
+    save_tickets(tickets)
+
+    return jsonify({
+        'success': True,
+        'message': 'Ticket updated',
+        'data': ticket
+    })
+
+
+@app.route('/api/tickets/<ticket_id>/comment', methods=['POST'])
+def add_ticket_comment(ticket_id):
+    """Add a comment to a ticket"""
+    tickets = load_tickets()
+
+    if ticket_id not in tickets:
+        return jsonify({'success': False, 'error': 'Ticket not found'}), 404
+
+    data = request.get_json()
+    comment = {
+        'id': data.get('id', str(datetime.now().timestamp())),
+        'user_id': data.get('user_id', 0),
+        'username': data.get('username', 'Anonymous'),
+        'content': data.get('content', ''),
+        'created_at': datetime.now().isoformat()
+    }
+
+    tickets[ticket_id]['comments'].append(comment)
+    tickets[ticket_id]['updated_at'] = datetime.now().isoformat()
+    save_tickets(tickets)
+
+    return jsonify({
+        'success': True,
+        'message': 'Comment added',
+        'comment': comment
+    })
+
+
+@app.route('/api/tickets/statistics', methods=['GET'])
+def get_tickets_statistics():
+    """Get ticket statistics"""
+    tickets = load_tickets()
+
+    if not tickets:
+        return jsonify({
+            'success': True,
+            'total': 0,
+            'open': 0,
+            'in_progress': 0,
+            'closed': 0,
+            'avg_resolution_time': 0
+        })
+
+    tickets_list = list(tickets.values())
+
+    total = len(tickets_list)
+    open_count = len([t for t in tickets_list if t.get('status') == 'open'])
+    in_progress = len([t for t in tickets_list if t.get('status') == 'in_progress'])
+    closed = len([t for t in tickets_list if t.get('status') == 'closed'])
+
+    # Calculate average resolution time
+    resolution_times = []
+    for ticket in tickets_list:
+        if ticket.get('closed_at') and ticket.get('created_at'):
+            try:
+                created = datetime.fromisoformat(ticket['created_at'])
+                closed = datetime.fromisoformat(ticket['closed_at'])
+                resolution_times.append((closed - created).total_seconds() / 3600)
+            except:
+                pass
+
+    avg_resolution_time = sum(resolution_times) / len(resolution_times) if resolution_times else 0
+
+    return jsonify({
+        'success': True,
+        'total': total,
+        'open': open_count,
+        'in_progress': in_progress,
+        'closed': closed,
+        'avg_resolution_time': round(avg_resolution_time, 2)
     })
 
 
