@@ -102,7 +102,7 @@ Access the dashboard at `http://localhost:5000` to manage applications through a
 
 ## Web Dashboard
 
-The bot includes a modern web dashboard for managing applications on localhost. See [WEB_DASHBOARD_README.md](WEB_DASHBOARD_README.md) for complete documentation.
+The bot includes a modern web dashboard for managing applications on localhost. 
 
 **Features:**
 - 📊 Real-time statistics and analytics
@@ -110,12 +110,171 @@ The bot includes a modern web dashboard for managing applications on localhost. 
 - ⏰ Scheduled reminders for pending reviews
 - 📥 Export to CSV or Excel
 - 🎨 Modern, responsive interface
+- 🎫 Ticket management and viewing
 
 **Quick Start:**
 ```bash
 python web_dashboard.py
 ```
 Then visit `http://localhost:5000`
+
+### Web Dashboard - Full Documentation
+
+#### Features
+
+##### 📊 Dashboard
+- Real-time statistics and overview
+- Total applications count
+- Pending, approved, and rejected application counts
+- Approval rate percentage
+- Average review time in hours
+- Recent applications overview
+
+##### 📝 Applications
+- View all applications with filtering by status (pending, approved, rejected)
+- Detailed application information display
+- Review applications with a modal interface
+- Add reviewer notes and decision
+- Real-time status updates
+
+##### 🎫 Tickets
+- View all support tickets with status filtering
+- Ticket cards showing priority and metadata
+- Update ticket status and priority
+- Add comments to tickets
+- View ticket statistics
+
+##### ⏰ Reminders
+- View all pending applications
+- See how long each application has been pending
+- Schedule automatic reminders for pending reviews
+- Configurable reminder intervals (hourly, daily, weekly, etc.)
+
+##### 📥 Export
+- Export applications to CSV format
+- Export applications to Excel format
+- Includes all application data and review information
+- Timestamped export files
+
+#### Installation
+
+1. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+2. Run the web dashboard:
+```bash
+python web_dashboard.py
+```
+
+3. Open your browser and navigate to:
+```
+http://localhost:5000
+```
+
+#### Usage
+
+##### Viewing Applications
+1. Click on "Applications" in the sidebar
+2. Filter by status using the dropdown menu
+3. Click "View Details" or "Review" on any application card
+
+##### Reviewing Applications
+1. Click "Review" on a pending application or go to Reminders and click "Review Now"
+2. Select Approve or Reject
+3. Add optional review notes
+4. Enter your name as the reviewer
+5. Click "Submit Review"
+
+##### Managing Tickets
+1. Go to "Tickets" section
+2. Filter by status (Open, In Progress, Closed)
+3. Click "View & Edit" on any ticket
+4. Update status/priority and add comments
+5. Save changes
+
+##### Setting Up Reminders
+1. Go to "Reminders" section
+2. Set the desired check interval (in hours)
+3. Click "Update Schedule"
+4. The system will print reminders to console at specified intervals
+
+##### Exporting Data
+1. Go to "Export" section
+2. Click "Download CSV" or "Download Excel"
+3. File will be downloaded with timestamp
+
+#### API Endpoints
+
+##### Applications
+- `GET /api/applications` - Get all applications with optional status filter
+  - Query: `status` (all, pending, approved, rejected)
+- `GET /api/applications/<app_id>` - Get a specific application details
+- `POST /api/applications/<app_id>/review` - Review and approve/reject
+  - Body: `{ decision, notes, reviewer }`
+- `GET /api/statistics` - Get application statistics
+- `GET /api/export/csv` - Export applications as CSV
+- `GET /api/export/excel` - Export applications as Excel
+
+##### Tickets
+- `GET /api/tickets` - Get all tickets with optional status filter
+  - Query: `status` (all, open, in_progress, closed)
+- `GET /api/tickets/<ticket_id>` - Get a specific ticket
+- `POST /api/tickets/<ticket_id>/update` - Update ticket status/priority
+  - Body: `{ status, priority, assigned_to }`
+- `POST /api/tickets/<ticket_id>/comment` - Add comment to ticket
+- `GET /api/tickets/statistics` - Get ticket statistics
+
+##### Reminders
+- `GET /api/reminders` - Get pending applications for review
+- `POST /api/reminders/schedule` - Schedule reminder checks
+  - Body: `{ hours }`
+
+#### Configuration
+
+The dashboard uses the same data files as the Discord bot:
+- Reads/writes application data from `applications_data.json`
+- Reads configuration from `applications_config.json`
+- Reads/writes ticket data from `tickets_data.json`
+- Reads configuration from `tickets_config.json`
+
+#### Troubleshooting
+
+##### Port 5000 already in use
+Change the port in `web_dashboard.py`:
+```python
+app.run(debug=True, port=5001)  # Change 5000 to another port
+```
+
+##### Template not found error
+Ensure the `templates` folder exists and contains `dashboard.html`
+
+##### Static files not loading
+Ensure the `static` folder structure exists:
+- `static/css/style.css`
+- `static/js/script.js`
+
+##### Applications/Tickets not showing
+1. Verify data JSON files exist and have data
+2. Check browser console for errors (F12)
+3. Verify the bot has saved data
+
+#### Performance Notes
+
+- Dashboard auto-refreshes every 30 seconds
+- Large datasets (100+ items) may take a moment to load
+- Export operations process all data in memory
+
+#### Security Considerations
+
+- Currently runs on localhost without authentication
+- For production use, add:
+  - Authentication/authorization
+  - HTTPS/SSL
+  - Rate limiting
+  - CORS restrictions
+  - Input validation
 
 ## Hosting Options
 
